@@ -2,7 +2,7 @@
 
 A tiny simulation of a rook trying to survive against a stationary bishop on an 8×8 toroidal board. Each round the rook moves either UP or RIGHT by the sum of two dice, and the board wraps around. If after any move the bishop can capture (same diagonal), the bishop wins; otherwise the rook survives after the configured number of rounds.
 
-### Setup t works
+### Setup
 - **Board**: 8×8 with wrap-around in both directions.
 - **Rook move**: Each round, a fair coin decides direction (UP or RIGHT), and two dice determine steps; wrap-around is applied. Output is printed.
 - **Capture**: Bishop captures if the rook ends on a square the bishop attacks. Same-square landings result in an immediate capture handled by the game loop.
