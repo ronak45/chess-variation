@@ -19,13 +19,17 @@ BISHOP_START_POS = "c3"
 # ------------------------------- Core types ---------------------------------
 @dataclass(frozen=True)
 class Pos:
-    f: int  # 0..7 for a..h
-    r: int  # 0..7 for 1..8
+    f: int  # 0..7 for a..h # vertical
+    r: int  # 0..7 for 1..8 # horizontal
 
     def __post_init__(self) -> None:
         if not (0 <= self.f < BOARD_SIZE and 0 <= self.r < BOARD_SIZE):
             raise ValueError(f"Invalid board coordinates: ({self.f}, {self.r})")
-
+    '''
+    from_algebraic → parse a chess square like "h1" into a Pos object.
+    to_algebraic → turn a Pos object back into chess notation.
+    step_wrap → move `steps` times by (df, dr) with toroidal wrap-around.
+    '''
     @staticmethod
     def from_algebraic(square: str) -> "Pos":
         if len(square) != 2 or square[0] not in FILES or square[1] not in RANKS:
@@ -38,7 +42,12 @@ class Pos:
         return f"{FILES[self.f]}{RANKS[self.r]}"
 
     def step_wrap(self, df: int, dr: int, steps: int) -> "Pos":
-        """Move `steps` times by (df, dr) with toroidal wrap-around."""
+        """Move `steps` times by (df, dr) wrap-around.
+        1. df = change in file (column direction, left/right).
+        2. dr = change in rank (row direction, up/down).
+        3. steps = how many times to apply (df, dr).
+        use modulo to wrap around the board.
+        """
         nf = (self.f + df * steps) % BOARD_SIZE
         nr = (self.r + dr * steps) % BOARD_SIZE
         return Pos(nf, nr)
@@ -59,6 +68,7 @@ class CoinFace(str, enum.Enum):
 
 
 # ----------------------------- Pieces & Board -------------------------------
+# Piece is a base class for all pieces.
 @dataclass
 class Piece:
     pos: Pos
@@ -71,7 +81,11 @@ class Bishop(Piece):
         df = abs(self.pos.f - target.f)
         dr = abs(self.pos.r - target.r)
         return df == dr and df != 0
-
+'''
+Example:
+Bishop at c1 (2,0) → attacks h6 (7,5) because |2-7| == |0-5| == 5.
+i.e. file difference is 5 and rank difference is 5 so we know it's a diagonal attack.
+'''
 
 @dataclass
 class Rook(Piece):
@@ -83,6 +97,10 @@ class Rook(Piece):
         new_pos = self.pos.step_wrap(df, dr, steps)
         return Rook(new_pos)
 
+'''
+Example:
+Rook at d4 (3,3) → attacks d7 (3,6) and h4 (7,3), but not d3.
+'''
 
 @dataclass
 class Board:
@@ -92,6 +110,7 @@ class Board:
     def bishop_can_capture_rook(self) -> bool:
         return self.bishop.attacks(self.rook.pos)
 
+    # Don't need bishop_can_capture_rook because we can just check if the rook attacks the bishop.
     def rook_can_capture_bishop(self) -> bool:
         return self.rook.attacks(self.bishop.pos)
 
